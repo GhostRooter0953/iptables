@@ -1,0 +1,10 @@
+---
+- name: apply v4 rules
+  include_tasks: apply_rules.yml
+  vars:
+    ip_version: ""
+
+- name: apply v6 rules
+  include_tasks: apply_rules.yml
+  vars:
+    ip_version: "6"

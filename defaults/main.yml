@@ -1,0 +1,18 @@
+---
+iptables_packages:
+  - iptables
+
+ext_ifaces:
+  - ens3
+
+accept_icmp:
+  v4: true
+  v6: true
+
+INPUT:
+  v4: []
+
+ipv4_policies: []
+ipv6_policies: []
+
+iptables_test_mode: false

@@ -1,93 +1,181 @@
-# ansible-role-iptables
-
-
-
-## Getting started
-
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
-
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
-
-## Add your files
-
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
-
-```
-cd existing_repo
-git remote add origin https://gitlab.com/GhostRooter0953/iptables.git
-git branch -M main
-git push -uf origin main
-```
-
-## Integrate with your tools
-
-- [ ] [Set up project integrations](https://gitlab.com/GhostRooter0953/iptables/-/settings/integrations)
-
-## Collaborate with your team
-
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
-
-## Test and Deploy
-
-Use the built-in continuous integration in GitLab.
-
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
-
-***
-
-# Editing this README
-
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
-
-## Suggestions for a good README
-
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
-
-## Name
-Choose a self-explaining name for your project.
+# iptables
 
 ## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+Ansible role for iptables setup.
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+## Settings
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+### Enable ICMP
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+``` yaml
+accept_icmp: { v4: true, v6: true }
+```
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+Creates typical ICMP rules for IPv4 and IPv6.
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+### Supported chains
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+- `input`. INPUT chain for input traffic
+- `enemy_input`. enemy_input chain for input traffic
+- `output`. OUTPUT chain for outgoing traffic
+- `docker_forward`. docker_forward chain for forward traffic
+- `dnat`. nat table. DNAT rules
+- `snat`. nat table. SNAT rules
+- `masq`. nat table. MASQUERADE rules
+- `postrouting`. postrouting chain, nat table.
+- `forward`. filter, mangle tables.
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+Any custom chains for filter table can be described via `custom_filter_chains` list. For example:
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+``` yaml
+custom_filter_chains:
+  some_chain:
+    v4:
+      - { dport: 80, comment: "custom chain rule" }
+    v6:
+      - { dport: 80, comment: "custom chain rule" }
+````
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+### Changing policies
 
-## License
-For open source projects, say how it is licensed.
+Performed via `ipv4_policies` and `ipv6_policies`, for example:
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+``` yaml
+ipv4_policies:
+  filter:
+    forward: drop
+ipv6_policies:
+  nat:
+    prerouting: drop
+```
+
+By default everything is ACCEPT.
+
+### Common settings for rules
+
+| Setting | Default | iptables | Description |
+| --- | --- | --- | --- |
+| `i: eth1` | - | `-i eth1` | input interface |
+| `ni: eth2` | - | `! -i eth2` | **not** input interface |
+| `dport: 1234, p: tcp` | `p:tcp` if dport is defined | `-p tcp -m tcp --dport 1234` | port and protocol |
+| `p: udp` | - | `-p udp` | protocol only |
+| `dport: "80,443"` | `p:tcp` if dport is defined | `-p tcp -m multiport --dports 80,443` | multiport. doesn't work for snat/masq rules |
+| `s: 123.123.123.123` | - | `-s 123.123.123.123` | source address |
+| `ns: 123.123.123.123` | - | `! -s 123.123.123.123` | **not** source address |
+| `d: 234.234.234.234` | - | `-d 234.234.234.234` | destination address |
+| `nd: 234.234.234.234` | - | `! -d 234.234.234.234` | **not** destination address |
+| `state: NEW` | - | `-m state --state NEW` | connection state |
+| `list: v4` | - | `-m set --match-set v4 src` | ipset list |
+| `nfacct: http-v4` | - | `-m nfacct --nfacct-name http-v4` | nfacct counter |
+| `comment: "test rule"` | - | `-m comment --comment "test rule"` | rule comment |
+
+These settings work for any supported chain.
+
+### Settings for input and docker_forward
+
+| Setting | Default | iptables | Description |
+| --- | --- | --- | --- |
+| `action: DROP` | `ACCEPT` | `-j DROP` | action for matched packet |
+
+enemy_input examples:
+
+| role rule |iptables rule |
+| --- | --- |
+| `{ s: 234.234.234.234, action: DROP }` | `-A enemy_input -s 234.234.234.234 -j DROP` |
+| `{ i: eth0, ni: eth1, dport: 80, s: 123.123.123.0/24, comment: 'test rule' }` | `-A enemy_input -i eth0 ! -i eth1 -p tcp -m tcp --dport 80 -s 123.123.123.0/24 -m comment --comment "test rule"` |
+
+docker_forward examples:
+
+| role rule | iptables rule |
+| --- | --- |
+| `{ p: tcp, drport 443 }` | `-A docker_forward -p tcp -m tcp --dport 443 -j ACCEPT` |
+| `{ action: DROP' }` | `-A docker_forward -j DROP` |
+
+### Settings for dnat
+
+| Setting | Default | iptables | Description |
+| --- | --- | --- | --- |
+| `o: eth1` | - | `-o eth1` | output interface |
+| `dport: 61000-62000` | `p:tcp` if dport is defined | `-p tcp -m tcp --dport 61000:62000` | same as common but with port range support |
+| `dstaddr: 10.10.10.10` | required | `-j DNAT --to-destination 10.10.10.10` | destination address |
+| `dstport: 61000-62000` | - | `-j DNAT --to-destination 10.10.10.10:61000-62000` | destination port or port range |
+
+### Settings for snat
+
+| Setting | Default | iptables | Description |
+| --- | --- | --- | --- |
+| `o: eth1` | - | `-o eth1` | output interface |
+| `srcaddr: 123.123.123.123` | required | `-j SNAT --to-source 123.123.123.123` | source address |
+
+### Settings for masq
+
+| Setting|Default|iptables|Description |
+| ---|---|---|---|
+| `o: eth1` | - | `-o eth1` | output interface |
+
+example:
+
+| role rule | iptables rule |
+| --- | --- |
+| `{ s: 10.10.10.0/24, nd: 10.10.10.0/24 }` | `-A PREROUTING -s 10.10.10.0/24 ! -d 10.10.10.0/24 -j MASQUERADE` |
+
+### Disable interface check
+
+``` yaml
+disable_interface_check: true
+```
+
+### Settings for modules policy, ipv6header, tcpmss
+
+| Setting | Default | iptables | Description |
+| --- | --- | --- | --- |
+| `m: policy` | - | `-m policy --dir in --pol ipsec` | policy module, you can override default `--dir` with `dir:` and `--pol` with `pol:` |
+| `reqid: 1` | - | `--reqid 1` | matches the reqid of the policy rule |
+| `m: ipv6header` | - | `-m ipv6header --header esp` | ipv6header module, you can override `--header` with `header:` |
+| `mss: 123` | - | `-m tcpmss --mss 123` | tcpmss module |
+| `action: TCPMSS` | - | `-j TCPMSS --clamp-mss-to-pmtu` | TCPMSS action, instead `--clamp-mss-to-pmtu` you can set `--set-mss` with `setmss:` |
+
+## Usage example
+
+``` yaml
+- role: iptables
+  ext_ifaces: [eno1, wlp1s0]
+  accept_icmp: { v4: true, v6: true }
+  input:
+    v4:
+      - { dport: 80, nfacct: "http-v4" }
+    v6:
+      - { dport: 80, nfacct: "http-v6" }
+  enemy_input:
+    v4:
+      - { list: v4 }
+      - { dport: 22, comment: "ssh host for clients access" }
+    v6:
+      - { list: v6 }
+  docker_forward:
+    v4:
+      - { state: 'RELATED,ESTABLISHED' }
+      - { dport: 80, comment: "nginx container" }
+      - { dport: 443, comment: "nginx container" }
+      - { p: tcp, dport: 5432, m: policy, dir: in, pol: ipsec, reqid: 1 }
+      - { action: DROP }
+    v6:
+      - { state: 'RELATED,ESTABLISHED' }
+      - { action: DROP }
+  dnat:
+    v4:
+      - { dport: 8888, dstaddr: 10.10.10.10, comment: "dnat for smth", dstport: 8888 }
+  snat:
+    v4:
+      - { s: 10.10.10.20, nd: 10.10.10.0/24, comment: "snat for smth", srcaddr: 123.123.123.123 }
+  masq:
+    v4:
+      - { s: 10.10.10.0/24, nd: 10.10.10.0/24, comment: "default masq rule" }
+  postrouting:
+    v6:
+      - { o: eth0, m: policy, dir: out }
+  mangle_forward:
+    v4:
+      - { o: eth0, p: tcp, flags: 'SYN,RST', mss: '1361:1536', setmss: 1360, action: TCPMSS }
+```
